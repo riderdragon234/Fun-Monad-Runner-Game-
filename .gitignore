@@ -1,2 +1,9 @@
-.env
-node_modules/
+# Ignore node_modules in root
+/node_modules/
+
+# Ignore environment variables inside backend
+/backend/.env
+
+Ignore system & editor files
+.DS_Store
+Thumbs.db
