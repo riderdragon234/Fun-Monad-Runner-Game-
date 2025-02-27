@@ -1,13 +1,19 @@
 {
-    "projects": [
+    "version": 2,
+    "builds": [
       {
-        "name": "jumper-frontend",
-        "root": "frontend"
+        "src": "backend/Server.js",
+        "use": "@vercel/node",
+        "config": { "zeroConfig": true }
       },
       {
-        "name": "jumper-backend",
-        "root": "backend"
+        "src": "frontend/index.html",
+        "use": "@vercel/static"
       }
+    ],
+    "routes": [
+      { "src": "/api/(.*)", "dest": "backend/Server.js" },
+      { "src": "/(.*)", "dest": "frontend/index.html" }
     ]
   }
   
