@@ -22,7 +22,7 @@ app.get('/', (req, res) => {
     let html = fs.readFileSync(filePath, 'utf8');
 
     // Replace placeholders with environment variables
-    html = html.replace('{{API_URL}}', process.env.API_URL || 'http://localhost:3000');
+    html = html.replace('{{API_URL}}', process.env.API_URL_PROD || 'http://localhost:3000');
 
     res.send(html);
 });
