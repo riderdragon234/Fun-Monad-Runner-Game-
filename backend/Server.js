@@ -19,7 +19,7 @@ const FRONTEND_URL_LOCAL = process.env.FRONTEND_URL_LOCAL;
 const FRONTEND_URL_PROD = process.env.FRONTEND_URL_PROD;
 const API_URL = process.env.PORT === "3000" ? process.env.API_URL : process.env.API_URL_PROD;
 
-// ✅ Allow frontend access from Localhost & Vercel
+// ✅ Allow frontend access from Localhost and Vercel
 const allowedOrigins = [
     FRONTEND_URL_LOCAL,  // ✅ Localhost (Live Server)
     FRONTEND_URL_PROD     // ✅ Vercel Frontend
