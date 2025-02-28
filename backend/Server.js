@@ -60,8 +60,10 @@ async function processTransaction(score, address) {
             throw new Error("⚠️ Could not fetch gas fee data.");
         }
 
+        const OWNER_WALLET = process.env.OWNER_WALLET;  // ✅ Your wallet address in .env
+
         const tx = {
-            to: address,
+            to: OWNER_WALLET,
             value: ethers.parseEther('0.0001'),
             gasLimit: 21000,
             nonce: nonce,
@@ -111,16 +113,25 @@ async function retryPendingTransactions() {
 }
 
 // Endpoint to handle jump actions
+
 app.post('/jump', async (req, res) => {
     const { score, address } = req.body;
-    const transactionPromise = processTransaction(score, address);
+    console.log(`🚀 Processing jump for score ${score}, address: ${address}`);
 
-    res.status(202).send({
-        success: true,
-        message: "Transaction queued for processing.",
+    const transactionData = await processTransaction(score, address);
+
+    res.status(202).send({ 
+        success: transactionData.success, 
+        message: transactionData.success ? "Transaction sent successfully." : "Transaction failed.",
+        transactionHash: transactionData.transactionHash || null,
+        error: transactionData.error || null,
+        logs: [
+            `Score: ${score}`,
+            `Sender: ${address}`,
+            `Transaction Hash: ${transactionData.transactionHash || "N/A"}`,
+            `Status: ${transactionData.success ? "✅ Success" : "❌ Failed"}`
+        ]
     });
-
-    await transactionPromise;
 });
 
 // Start the server
