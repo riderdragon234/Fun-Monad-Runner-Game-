@@ -2,10 +2,9 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { ethers } = require('ethers');
 const cors = require('cors');
-const path = require('path'); // Correctly import the 'path' module
-const fs = require('fs'); // Import the 'fs' module for file operations
-
-require('dotenv').config({ path: './backend/.env' }); // ✅ Ensure correct path
+const path = require('path');  // Correctly import path module
+const fs = require('fs');  // Import fs module for file operations
+require('dotenv').config({ path: './backend/.env' });  // ✅ Ensure correct path
 
 // ✅ Debug: Check if PRIVATE_KEY is loaded correctly
 if (!process.env.PRIVATE_KEY) {
@@ -14,36 +13,55 @@ if (!process.env.PRIVATE_KEY) {
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// ✅ Load frontend & backend URLs from .env
+const FRONTEND_URL_LOCAL = process.env.FRONTEND_URL_LOCAL;
+const FRONTEND_URL_PROD = process.env.FRONTEND_URL_PROD;
+const API_URL = process.env.PORT === "3000" ? process.env.API_URL : process.env.API_URL_PROD;
+
+// ✅ Allow frontend access from Localhost & Vercel
+const allowedOrigins = [
+    FRONTEND_URL_LOCAL,  // ✅ Localhost (Live Server)
+    FRONTEND_URL_PROD     // ✅ Vercel Frontend
+];
+
 const corsOptions = {
-    origin: "*", 
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE"
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("⚠️ CORS policy: Unauthorized request!"));
+        }
+    },
+    optionsSuccessStatus: 200,
 };
 
-// Middleware
-app.use(cors(corsOptions));
+app.use(cors(corsOptions)); // ✅ Enable CORS globally
 app.use(bodyParser.json());
 
-// Serve static files from the "public" folder
+// ✅ Serve static files from "public" folder
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Inject environment variables into the HTML
+// ✅ Inject environment variables into HTML
 app.get('/', (req, res) => {
     const filePath = path.join(__dirname, 'public', 'index.html');
     let html = fs.readFileSync(filePath, 'utf8');
-
-    // Replace placeholders with environment variables
-    html = html.replace('{{API_URL}}', process.env.API_URL_PROD || 'http://localhost:3000');
-
+    html = html.replace('{{API_URL}}', API_URL);
     res.send(html);
 });
 
-// Ethereum setup
+// ✅ Serve API URL dynamically
+app.get('/config', (req, res) => {
+    res.json({ api_url: API_URL });
+});
+
+// ✅ Ethereum setup
 const provider = new ethers.JsonRpcProvider('https://testnet-rpc.monad.xyz');
 const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 const nonceManager = new ethers.NonceManager(wallet);
 
 const pendingTransactions = new Map();
-const usedNonces = new Set(); // Track used nonces
+const usedNonces = new Set();  // ✅ Track used nonces
 
 // ✅ Process a transaction
 async function processTransaction(score, address) {
@@ -52,7 +70,7 @@ async function processTransaction(score, address) {
         const nonce = await nonceManager.getNonce();
         if (!usedNonces.has(nonce)) {
             console.log(`🚀 Using Nonce: ${nonce} for score ${score}`);
-            usedNonces.add(nonce); // Track logged nonces to prevent duplicate logs
+            usedNonces.add(nonce);
         }
 
         const feeData = await provider.getFeeData();
@@ -61,10 +79,9 @@ async function processTransaction(score, address) {
         }
 
         const OWNER_WALLET = process.env.OWNER_WALLET;  // ✅ Your wallet address in .env
-
         const tx = {
-            to: OWNER_WALLET,
-            value: ethers.parseEther('0.0001'),
+            to: OWNER_WALLET,  // ✅ Send funds to YOUR wallet instead of the user
+            value: ethers.parseEther('0.0001'),  // Amount received per jump
             gasLimit: 21000,
             nonce: nonce,
             maxPriorityFeePerGas: feeData.maxPriorityFeePerGas,
@@ -84,13 +101,14 @@ async function processTransaction(score, address) {
         });
 
         return { success: true, transactionHash: transactionResponse.hash };
+
     } catch (error) {
         console.error('❌ Transaction failed:', error);
         return { success: false, error: error.message };
     }
 }
 
-// Retry pending transactions
+// ✅ Retry pending transactions
 async function retryPendingTransactions() {
     console.log("🔄 Checking for pending transactions...");
     let foundPending = false;
@@ -112,16 +130,15 @@ async function retryPendingTransactions() {
     }
 }
 
-// Endpoint to handle jump actions
-
+// ✅ Endpoint to handle jump actions
 app.post('/jump', async (req, res) => {
     const { score, address } = req.body;
     console.log(`🚀 Processing jump for score ${score}, address: ${address}`);
 
     const transactionData = await processTransaction(score, address);
 
-    res.status(202).send({ 
-        success: transactionData.success, 
+    res.status(202).send({
+        success: transactionData.success,
         message: transactionData.success ? "Transaction sent successfully." : "Transaction failed.",
         transactionHash: transactionData.transactionHash || null,
         error: transactionData.error || null,
@@ -134,8 +151,8 @@ app.post('/jump', async (req, res) => {
     });
 });
 
-// Start the server
+// ✅ Start the server
 app.listen(port, async () => {
-    console.log(`🔥 Relayer server running at http://localhost:${port}`);
+    console.log(`🔥 Relayer server running at ${API_URL}`);
     await retryPendingTransactions();
 });
