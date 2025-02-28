@@ -155,4 +155,5 @@ app.post('/jump', async (req, res) => {
 app.listen(port, async () => {
     console.log(`🔥 Relayer server running at ${API_URL}`);
     await retryPendingTransactions();
+    
 });
