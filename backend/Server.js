@@ -4,13 +4,23 @@ const { ethers } = require('ethers');
 const cors = require('cors');
 const path = require('path'); // Correctly import the 'path' module
 const fs = require('fs'); // Import the 'fs' module for file operations
-require('dotenv').config();
+
+require('dotenv').config({ path: './backend/.env' }); // ✅ Ensure correct path
+
+// ✅ Debug: Check if PRIVATE_KEY is loaded correctly
+if (!process.env.PRIVATE_KEY) {
+    throw new Error("⚠️ PRIVATE_KEY is missing or not loaded!");
+}
 
 const app = express();
 const port = process.env.PORT || 3000;
+const corsOptions = {
+    origin: "*", 
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE"
+};
 
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 // Serve static files from the "public" folder
