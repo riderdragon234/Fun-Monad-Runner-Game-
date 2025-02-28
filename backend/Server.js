@@ -2,11 +2,10 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { ethers } = require('ethers');
 const cors = require('cors');
-const path = require('path');  // Correctly import path module
-const fs = require('fs');  // Import fs module for file operations
-require('dotenv').config({ path: './backend/.env' });  // ✅ Ensure correct path
+const path = require('path'); 
+const fs = require('fs'); 
+require('dotenv').config({ path: './backend/.env' }); 
 
-// ✅ Debug: Check if PRIVATE_KEY is loaded correctly
 if (!process.env.PRIVATE_KEY) {
     throw new Error("⚠️ PRIVATE_KEY is missing or not loaded!");
 }
@@ -15,29 +14,34 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // ✅ Load frontend & backend URLs from .env
-const FRONTEND_URL_LOCAL = process.env.FRONTEND_URL_LOCAL;
-const FRONTEND_URL_PROD = process.env.FRONTEND_URL_PROD;
-const API_URL = process.env.PORT === "3000" ? process.env.API_URL : process.env.API_URL_PROD;
+const FRONTEND_URL_LOCAL = process.env.FRONTEND_URL_LOCAL || "http://127.0.0.1:5500";
+const FRONTEND_URL_PROD = process.env.FRONTEND_URL_PROD || "https://fun-monad-runner-game-yjjk.vercel.app";
+const API_URL = process.env.API_URL_PROD || process.env.API_URL;
 
 // ✅ Allow frontend access from Localhost and Vercel
-const allowedOrigins = [
-    FRONTEND_URL_LOCAL,  // ✅ Localhost (Live Server)
-    FRONTEND_URL_PROD     // ✅ Vercel Frontend
-];
+const allowedOrigins = [FRONTEND_URL_LOCAL, FRONTEND_URL_PROD];
 
+// ✅ Fix CORS Configuration
 const corsOptions = {
     origin: function (origin, callback) {
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
+            console.error(`❌ CORS Rejected for Origin: ${origin}`);
             callback(new Error("⚠️ CORS policy: Unauthorized request!"));
         }
     },
-    optionsSuccessStatus: 200,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,  
+    optionsSuccessStatus: 204  
 };
 
-app.use(cors(corsOptions)); // ✅ Enable CORS globally
+app.use(cors(corsOptions)); 
 app.use(bodyParser.json());
+
+console.log("✅ Allowed CORS Origins:", allowedOrigins);
+
 
 // ✅ Serve static files from "public" folder
 app.use(express.static(path.join(__dirname, 'public')));
@@ -155,5 +159,5 @@ app.post('/jump', async (req, res) => {
 app.listen(port, async () => {
     console.log(`🔥 Relayer server running at ${API_URL}`);
     await retryPendingTransactions();
-    
+
 });
